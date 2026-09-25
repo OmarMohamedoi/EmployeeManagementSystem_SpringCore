@@ -1,50 +1,77 @@
-# Lab 6 — Spring Core (XML-Based Dependency Injection)
+# Employee Management System — Spring Core Mini Project
 
-## Structure
+A lightweight, robust **Spring Core (non-Boot)** application built to demonstrate mastery of the Spring IoC container, Dependency Injection, bean scopes, lifecycle management, and enterprise-grade design patterns.
 
+---
+
+## 🚀 Key Features & Spring Core Concepts Demonstrated
+
+* **Inversion of Control (IoC) & Dependency Injection (DI):** Fully managed by the Spring container using constructor injection for loose coupling and immutability.
+* **Component Scanning & Java-Based Configuration:** Combines `@Configuration` / `@Bean` definitions with stereotype annotations (`@Service`, `@Repository`, `@Component`).
+* **Environment Profiles (`@Profile`):** Dual repository implementation switching seamlessly between an in-memory store (`dev`) and a file-backed store (`prod`).
+* **Collection Injection & Ordering:** Automatically injects all `Notifier` implementations into a `List` within `NotificationManager`, enforcing execution sequence using `@Order`.
+* **Custom Validation & Exception Handling:** Enforces business rules via `EmployeeValidator`, throwing a custom unchecked `InvalidEmployeeException`.
+* **The Scoped-Bean Problem & Prototypes:** Resolves the singleton-to-prototype dependency hurdle using `ObjectProvider<AuditLogger>`, guaranteeing fresh instances on every call.
+* **Externalized Configuration:** Loads custom properties from `application.properties` using `@PropertySource` and `@Value` to enforce constraints like maximum raise limits.
+* **Bean Lifecycle Callbacks:** Utilizes `@PostConstruct` for initialization hooks and `@PreDestroy` for clean resource teardown upon application context closure.
+
+---
+
+## 📂 Project Structure
+
+```text
+com.example/
+├── MainApp.java                    # Entry point & end-to-end demonstration
+├── config/
+│   └── AppConfig.java              # Java-based configuration & property source
+├── entity/
+│   └── Employee.java               # Domain model (id, name, department, salary)
+├── repository/
+│   ├── EmployeeRepository.java     # Repository interface
+│   ├── EmployeeRepoImpl.java       # Dev profile implementation (In-Memory)
+│   ├── FileMemoryEmployeRepo.java  # Prod profile implementation (File-backed)
+│   └── InMemoryEmployeRepo.java    # Supporting data holder bean
+├── Service/
+│   ├── EmployeeService.java        # Service interface
+│   ├── EmployeeServiceImpl.java    # Core business logic & validators
+│   ├── EmployeeValidator.java      # Validation logic component
+│   └── InvalidEmployeeException.java # Custom runtime exception
+├── notify/
+│   ├── Notifier.java               # Notification interface
+│   ├── SmsNotifier.java            # @Order(1)
+│   ├── PushNotifier.java           # @Order(2)
+│   ├── EmailNotifier.java          # @Order(3)
+│   └── NotifyManager.java          # Collection injection manager
+└── audit/
+    └── AuditLogger.java            # Prototype-scoped audit logger
 ```
-lab6-spring-core/
-  lab6-spring-core-guide.md   ← Obsidian-formatted guide with all 8 exercises + collapsible solutions
-  starter/                    ← Maven project with TODOs (won't compile/run correctly until filled in)
-  solution/                   ← fully working Maven project
-```
+## 🏛️ Architectural Design & Justifications
 
-## Important Difference From Labs 1–5
+### 1. Bean Scopes: Singleton vs. Prototype
+* **Singletons (`@Service`, `@Repository`, `NotificationManager`):** Default Spring scope. Used for stateless components and shared services to optimize memory and startup performance.
+* **Prototype (`AuditLogger`):** Configured with `@Scope("prototype")`. A new instance is explicitly requested and generated every time an audit log is triggered, ensuring distinct timestamps and object identities.
 
-Unlike the earlier labs (functional interfaces, streams, generics, records), **this lab requires Spring as a dependency**, so plain `javac` won't work. Both `starter/` and `solution/` are full Maven projects with a `pom.xml` that pulls in `spring-context`.
+### 2. Solving the Scoped-Bean Problem
+Because `EmployeeServiceImpl` is a **Singleton**, injecting a prototype `AuditLogger` directly via standard `@Autowired` would lock in a single audit instance for the entire application lifecycle. 
+* **Solution:** We utilized `ObjectProvider<AuditLogger>`, allowing the service to dynamically request a fresh prototype instance (`loggerManager.getObject()`) on every employee creation.
 
-## How to Run
+### 3. Dependency Injection Strategy
+* **Constructor Injection** was chosen across all primary components (`EmployeeServiceImpl`, repositories, validators). This ensures mandatory dependencies cannot be `null`, promotes immutability, and makes unit testing significantly easier.
 
-You need [Maven](https://maven.apache.org/) installed, and an internet connection the first time (to download Spring's jars).
+### 4. Environment Profiles (`dev` vs. `prod`)
+* By annotating `EmployeeRepoImpl` with `@Profile("dev")` and `FileMemoryEmployeRepo` with `@Profile("prod")`, Spring dynamically provisions the appropriate data persistence mechanism based solely on the active environment profile set in `MainApp`.
 
-```bash
-cd solution   # or starter, once the TODOs are filled in
-mvn compile exec:java -Dexec.mainClass="com.example.MainApp"
-```
+---
 
-Or, if you prefer an IDE (IntelliJ, Eclipse, VS Code with the Java extensions): open the `solution/` (or `starter/`) folder as a Maven project, let it download dependencies, and run `MainApp.java` directly.
+## 🛠️ How to Run the Application
 
-## What's Wired Up
+1. Open the project in your preferred IDE (e.g., IntelliJ IDEA).
+2. Ensure dependencies (`spring-context`, `jakarta.annotation-api`) are loaded via Maven/Gradle.
+3. Open `MainApp.java` and choose your active profile:
+   ```java
+   context.getEnvironment().setActiveProfiles("dev"); // or "prod"
+Open MainApp.java and choose your active profile:
 
-The `solution/` project's `MainApp` runs through every exercise in sequence when executed, printing labeled sections to the console:
-
-- **6.1** — retrieves and uses the `greeter` bean
-- **6.2 / 6.3 / 6.4 / 6.6** — retrieves the `car` bean (mixing constructor injection for `Notifier`, setter injection for `Engine`, and simple value injection for `model`/`year`)
-- **6.5** — proves singleton scope by comparing two `getBean("engine")` calls with `==`
-- **6.7** — eager initialization is visible from the very first line: `"Engine bean created"` prints as soon as the context loads, before any `getBean()` call
-- **6.8** — runs the full `OrderService → PaymentService → Notifier` capstone chain
-
-## Exercise Index
-
-| Exercise | Concept | File(s) |
-|---|---|---|
-| 6.1 | Your first bean | `Greeter.java` |
-| 6.2 | Constructor injection | `Engine.java`, `Car.java` |
-| 6.3 | Setter injection | `Car.java` |
-| 6.4 | Injecting simple values | `Car.java` |
-| 6.5 | Singleton scope | `MainApp.java` |
-| 6.6 | Swapping implementations | `Notifier.java`, `EmailNotifier.java`, `SmsNotifier.java` |
-| 6.7 | Eager vs. lazy initialization | `Engine.java`, `MainApp.java` |
-| 6.8 | Capstone: 3-layer wiring | `OrderService.java`, `PaymentService.java` |
-
-All XML wiring lives in `src/main/resources/applicationContext.xml`.
+Java
+context.getEnvironment().setActiveProfiles("dev"); // or "prod"
+Run MainApp.main() to execute the full suite of validations, raises, collection notifications, prototype hash verifications, and lifecycle teardowns!
