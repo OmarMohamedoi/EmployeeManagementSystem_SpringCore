@@ -1,6 +1,4 @@
-package com.example.Service;
-
-import com.example.notify.Notifier;
+package com.example.notify;
 
 public class EmailNotifier implements Notifier {
     @Override

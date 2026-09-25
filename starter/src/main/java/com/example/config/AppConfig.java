@@ -1,19 +1,17 @@
 package com.example.config;
 
-import com.example.Service.*;
-import com.example.notify.Notifier;
-import com.example.notify.NotifyManager;
-import com.example.notify.PushNotifier;
-import com.example.notify.SmsNotifier;
+import com.example.notify.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.annotation.Order;
 
 import java.util.List;
 
 @Configuration
 @ComponentScan(basePackages="com.example")
+@PropertySource("classpath:application.properties")
 public class AppConfig {
 
     @Bean

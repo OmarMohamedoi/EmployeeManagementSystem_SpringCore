@@ -23,6 +23,9 @@ public class EmployeeRepoImpl implements EmployeeRepository{
 
     @Override
     public void save(Employee employee) {
+        if (employee.getId() == 0) {
+            employee.setId(e.employees.size() + 1);
+        }
         e.employees.add(employee);
     }
 
